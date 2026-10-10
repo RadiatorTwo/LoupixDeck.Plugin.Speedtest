@@ -19,8 +19,20 @@ public sealed class SpeedtestPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         Version = new Version(1, 0, 0),
         SdkVersion = SdkInfo.Version,
         Author = "RadiatorTwo",
-        Description = "Internet speed test (Cloudflare, M-Lab, LibreSpeed) and LAN test (iperf3) with live results on a touch button."
+        Description = "Internet speed test (Cloudflare, M-Lab, LibreSpeed) and LAN test (iperf3) with live results on a touch button.",
+        Icon = LoadIcon()
     };
+
+    /// <summary>The plugin icon (icon.png, embedded). Missing data only costs the icon.</summary>
+    private static byte[]? LoadIcon()
+    {
+        using Stream? stream = typeof(SpeedtestPlugin).Assembly.GetManifestResourceStream("LoupixDeck.Plugin.Speedtest.icon.png");
+        if (stream == null) return null;
+
+        using MemoryStream buffer = new();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
+    }
 
     public override void Initialize(IPluginHost host)
     {

@@ -70,23 +70,20 @@ internal static class SpeedtestRenderer
         int inner = size - (2 * stroke) - Px(6, s);
         int innerX = (w - inner) / 2;
         Text(canvas, value, innerX, Px(28, s), inner, Px(24, s), PluginColor.White, FitFont(canvas, value, inner, 20 * s), bold: true);
-        Text(canvas, showsRate ? "Mbit/s" : string.Empty, 0, Px(51, s), w, Px(10, s), Muted, 9 * s);
+        Text(canvas, showsRate ? "Mbit/s" : string.Empty, 0, Px(50, s), w, Px(14, s), Muted, 11 * s);
         Text(canvas, label, 0, Px(72, s), w, Px(14, s), color, 10 * s, bold: true);
     }
 
     private static void RenderResult(IRenderCanvas canvas, float s, SpeedtestResult result)
     {
-        int w = canvas.Width;
-        int row = Px(22, s);
-        int y = Px(4, s);
+        int row = Px(28, s);
+        int y = (canvas.Height - (3 * row)) / 2;
 
-        Row(canvas, s, y, "arrow-down", DownloadColor, WithUnit(result.DownloadMbps));
-        Row(canvas, s, y + row, "arrow-up", UploadColor, WithUnit(result.UploadMbps));
-        Row(canvas, s, y + (2 * row), "timer-outline", PingColor,
-            result.PingMs is { } ping ? $"{ping.ToString("F0", CultureInfo.InvariantCulture)} ms" : "–");
-
-        string footer = $"{result.Server} · {Age(result.CompletedAt)}";
-        Text(canvas, footer, Px(2, s), y + (3 * row), w - Px(4, s), Px(14, s), Muted, FitFont(canvas, footer, w - Px(4, s), 9 * s));
+        Row(canvas, s, y, row, "arrow-down", DownloadColor, FormatMbps(result.DownloadMbps), "Mbps");
+        Row(canvas, s, y + row, row, "arrow-up", UploadColor, FormatMbps(result.UploadMbps), "Mbps");
+        Row(canvas, s, y + (2 * row), row, "timer-outline", PingColor,
+            result.PingMs is { } ping ? ping.ToString("F0", CultureInfo.InvariantCulture) : "–",
+            result.PingMs is null ? string.Empty : "ms");
     }
 
     private static void RenderError(IRenderCanvas canvas, float s, string title, string? error)
@@ -98,15 +95,26 @@ internal static class SpeedtestRenderer
         Text(canvas, message, Px(2, s), Px(58, s), w - Px(4, s), Px(28, s), ErrorColor, FitFont(canvas, message, (w - Px(4, s)) * 2, 10 * s));
     }
 
-    private static void Row(IRenderCanvas canvas, float s, int y, string symbol, PluginColor color, string value)
+    /// <summary>Icon, value in large type, unit in small type right after it.</summary>
+    private static void Row(IRenderCanvas canvas, float s, int y, int height, string symbol, PluginColor color,
+        string value, string unit)
     {
-        int icon = Px(18, s);
-        int x = Px(6, s);
-        Symbol(canvas, symbol, x + (icon / 2), y + Px(11, s), icon, color);
+        int icon = Px(20, s);
+        int x = Px(4, s);
+        Symbol(canvas, symbol, x + (icon / 2), y + (height / 2), icon, color);
+
         int textX = x + icon + Px(4, s);
-        int textW = canvas.Width - textX - Px(4, s);
-        canvas.DrawText(value, textX, y, textW, Px(22, s), PluginColor.White, FitFont(canvas, value, textW, 15 * s),
+        int textW = canvas.Width - textX - Px(3, s);
+        float unitSize = 10 * s;
+        float unitW = unit.Length == 0 ? 0 : canvas.MeasureText(unit, unitSize) + Px(3, s);
+        float valueSize = FitFont(canvas, value, (int)(textW - unitW), 19 * s);
+        int valueW = (int)MathF.Ceiling(canvas.MeasureText(value, valueSize, bold: true));
+
+        canvas.DrawText(value, textX, y, valueW + 1, height, PluginColor.White, valueSize,
             TextHAlign.Left, TextVAlign.Middle, bold: true);
+        if (unit.Length > 0)
+            canvas.DrawText(unit, textX + valueW + Px(3, s), y + Px(2, s), (int)unitW, height, Muted, unitSize,
+                TextHAlign.Left, TextVAlign.Middle);
     }
 
     /// <summary>
@@ -146,18 +154,4 @@ internal static class SpeedtestRenderer
         >= 10 => mbps.Value.ToString("F1", CultureInfo.InvariantCulture),
         _ => mbps.Value.ToString("F2", CultureInfo.InvariantCulture)
     };
-
-    private static string WithUnit(double? mbps) => mbps is null ? "–" : $"{FormatMbps(mbps)} Mbps";
-
-    private static string Age(DateTimeOffset at)
-    {
-        TimeSpan age = DateTimeOffset.Now - at;
-        return age.TotalMinutes switch
-        {
-            < 1 => "now",
-            < 60 => $"{(int)age.TotalMinutes} min",
-            < 1440 => $"{(int)age.TotalHours} h",
-            _ => $"{(int)age.TotalDays} d"
-        };
-    }
 }

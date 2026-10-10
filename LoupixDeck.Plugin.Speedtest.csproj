@@ -14,6 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Plugin icon, read from the assembly so it does not depend on the install layout. -->
+    <EmbeddedResource Include="icon.png" LogicalName="LoupixDeck.Plugin.Speedtest.icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The SDK is shared from the host at runtime: compile against it but do
          not copy it into the plugin folder. -->
     <PackageReference Include="LoupixDeck.PluginSdk" Version="1.31.1">

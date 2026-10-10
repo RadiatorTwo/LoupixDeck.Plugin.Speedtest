@@ -39,7 +39,7 @@ internal static class SpeedtestRenderer
     private static void RenderIdle(IRenderCanvas canvas, float s, string title)
     {
         int w = canvas.Width;
-        canvas.DrawSymbol("speedometer", (w - Px(40, s)) / 2, Px(10, s), Px(40, s), Px(40, s), PluginColor.White);
+        Symbol(canvas, "speedometer", w / 2, Px(30, s), Px(36, s), PluginColor.White);
         Text(canvas, title, 0, Px(54, s), w, Px(16, s), PluginColor.White, 13 * s, bold: true);
         Text(canvas, "Press to start", 0, Px(70, s), w, Px(14, s), Muted, 10 * s);
     }
@@ -56,17 +56,22 @@ internal static class SpeedtestRenderer
 
         int w = canvas.Width;
         int h = canvas.Height;
-        int inset = Px(4, s);
-        int stroke = Math.Max(2, Px(5, s));
-        canvas.DrawArc(inset, inset, w - (2 * inset), h - (2 * inset), 135, 270, stroke, Track);
+        int size = Math.Min(w, h) - Px(24, s);
+        int x = (w - size) / 2;
+        int y = (h - size) / 2;
+        int stroke = Math.Max(2, Px(4, s));
+        canvas.DrawArc(x, y, size, size, 135, 270, stroke, Track);
         if (state.Fraction > 0)
-            canvas.DrawArc(inset, inset, w - (2 * inset), h - (2 * inset), 135, (float)(270 * state.Fraction), stroke, color);
+            canvas.DrawArc(x, y, size, size, 135, (float)(270 * state.Fraction), stroke, color);
 
         bool showsRate = state.Phase is SpeedtestPhase.Download or SpeedtestPhase.Upload;
         string value = showsRate ? FormatMbps(state.Mbps) : "…";
-        Text(canvas, value, Px(12, s), Px(24, s), w - Px(24, s), Px(30, s), PluginColor.White, FitFont(canvas, value, w - Px(24, s), 24 * s), bold: true);
-        Text(canvas, showsRate ? "Mbit/s" : string.Empty, 0, Px(52, s), w, Px(12, s), Muted, 10 * s);
-        Text(canvas, label, 0, Px(66, s), w, Px(14, s), color, 11 * s, bold: true);
+        // Value and unit sit inside the ring, the phase label in the gap at the bottom.
+        int inner = size - (2 * stroke) - Px(6, s);
+        int innerX = (w - inner) / 2;
+        Text(canvas, value, innerX, Px(28, s), inner, Px(24, s), PluginColor.White, FitFont(canvas, value, inner, 20 * s), bold: true);
+        Text(canvas, showsRate ? "Mbit/s" : string.Empty, 0, Px(51, s), w, Px(10, s), Muted, 9 * s);
+        Text(canvas, label, 0, Px(72, s), w, Px(14, s), color, 10 * s, bold: true);
     }
 
     private static void RenderResult(IRenderCanvas canvas, float s, SpeedtestResult result)
@@ -87,7 +92,7 @@ internal static class SpeedtestRenderer
     private static void RenderError(IRenderCanvas canvas, float s, string title, string? error)
     {
         int w = canvas.Width;
-        canvas.DrawSymbol("alert-circle", (w - Px(30, s)) / 2, Px(8, s), Px(30, s), Px(30, s), ErrorColor);
+        Symbol(canvas, "alert-circle", w / 2, Px(23, s), Px(30, s), ErrorColor);
         Text(canvas, title, 0, Px(40, s), w, Px(16, s), PluginColor.White, 12 * s, bold: true);
         string message = error ?? "Failed";
         Text(canvas, message, Px(2, s), Px(58, s), w - Px(4, s), Px(28, s), ErrorColor, FitFont(canvas, message, (w - Px(4, s)) * 2, 10 * s));
@@ -97,11 +102,27 @@ internal static class SpeedtestRenderer
     {
         int icon = Px(18, s);
         int x = Px(6, s);
-        canvas.DrawSymbol(symbol, x, y + Px(2, s), icon, icon, color);
+        Symbol(canvas, symbol, x + (icon / 2), y + Px(11, s), icon, color);
         int textX = x + icon + Px(4, s);
         int textW = canvas.Width - textX - Px(4, s);
         canvas.DrawText(value, textX, y, textW, Px(22, s), PluginColor.White, FitFont(canvas, value, textW, 15 * s),
             TextHAlign.Left, TextVAlign.Middle, bold: true);
+    }
+
+    /// <summary>
+    /// Draws a symbol centered on a point. The host stretches a glyph to fill its box, so the box must
+    /// have the glyph's own aspect ratio (width / height, measured from the MDI font).
+    /// </summary>
+    private static void Symbol(IRenderCanvas canvas, string id, int centerX, int centerY, int height, PluginColor color)
+    {
+        double aspect = id switch
+        {
+            "speedometer" => 1.151,
+            "timer-outline" => 0.857,
+            _ => 1.0
+        };
+        int width = (int)Math.Round(height * aspect);
+        canvas.DrawSymbol(id, centerX - (width / 2), centerY - (height / 2), width, height, color);
     }
 
     private static void Text(IRenderCanvas canvas, string text, int x, int y, int w, int h, PluginColor color,

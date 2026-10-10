@@ -5,8 +5,8 @@
   "sdkVersion": "1.31",
   "entryAssembly": "LoupixDeck.Plugin.Speedtest.dll",
   "platform": "All",
-  "author": "",
-  "description": "",
-  "projectUrl": "",
+  "author": "RadiatorTwo",
+  "description": "Internet speed test (Cloudflare, M-Lab, LibreSpeed) and LAN test (iperf3) with live results on a touch button.",
+  "projectUrl": "https://github.com/RadiatorTwo/LoupixDeck.Plugin.Speedtest",
   "iconFile": ""
 }
